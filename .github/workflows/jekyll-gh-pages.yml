@@ -33,10 +33,10 @@ jobs:
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1
         with:
-          source: ./Particle size measuring tool for SEM pictures.html
+          source: ./
           destination: ./_site
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/Particle size measuring tool for SEM pictures.html
 
   # Deployment job
   deploy:
