@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SEM图片颗粒尺寸测量工具</title>
+    <title>SEM图片颗粒尺寸测量工具（支持TIFF）</title>
     <style>
         * {
             margin: 0;
@@ -383,13 +383,21 @@
             text-align: center;
             font-size: 0.9rem;
         }
+
+        /* 添加文件类型提示 */
+        .file-type-hint {
+            margin-top: 10px;
+            text-align: center;
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
             <h1>SEM图片颗粒尺寸测量工具</h1>
-            <p class="subtitle">上传SEM图像，定义标尺比例，然后测量颗粒尺寸。自动计算实际尺寸并显示测量结果。</p>
+            <p class="subtitle">上传SEM图像，定义标尺比例，然后测量颗粒尺寸。<br>自动计算实际尺寸并显示测量结果，支持多次测量结果统计。</p>
         </header>
         
         <div class="app-container">
@@ -403,7 +411,7 @@
                 <div class="instructions">
                     <p><strong>使用说明：</strong></p>
                     <ol>
-                        <li>上传SEM图像（支持JPG、PNG格式）</li>
+                        <li>上传SEM图像（支持JPG、PNG、TIFF等格式）</li>
                         <li>点击"设置标尺"按钮，在图像标尺上绘制一条线</li>
                         <li>输入标尺的实际长度和单位</li>
                         <li>点击"开始测量"按钮，在颗粒上绘制测量线</li>
@@ -413,9 +421,11 @@
                 
                 <div class="upload-area">
                     <div class="file-input-wrapper">
-                        <input type="file" id="imageUpload" accept="image/*">
+                        <input type="file" id="imageUpload" accept=".jpg,.jpeg,.png,.tif,.tiff,.bmp,.webp">
                         <label for="imageUpload" class="file-input-label">选择SEM图像文件</label>
                     </div>
+                    
+                    <div class="file-type-hint">支持格式: JPG, PNG, TIFF</div>
                     
                     <div class="status-bar" id="statusBar">
                         等待上传图像...
@@ -503,10 +513,13 @@
         </div>
         
         <footer>
-            <p>SEM图像颗粒尺寸测量工具 | 科学图像分析 | 使用Canvas技术实现</p>
+            <p>SEM图像颗粒尺寸测量工具 | 科学图像分析 | 支持TIFF格式 | 使用Canvas技术实现</p>
         </footer>
     </div>
 
+    <!-- 添加TIFF.js库以支持TIFF格式 -->
+    <script src="https://cdn.jsdelivr.net/npm/tiff.js@1.0.0/tiff.min.js"></script>
+    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // 获取DOM元素
@@ -703,39 +716,76 @@
                 maxSize.textContent = `${max.toFixed(2)} μm`;
             }
             
-            // 处理图像上传
+            // 处理图像上传（支持TIFF格式）
             imageUpload.addEventListener('change', function(e) {
                 if (e.target.files && e.target.files[0]) {
                     const file = e.target.files[0];
                     statusBar.textContent = `正在加载: ${file.name}...`;
                     
                     const reader = new FileReader();
+                    const isTiff = file.name.toLowerCase().endsWith('.tif') || file.name.toLowerCase().endsWith('.tiff');
                     
-                    reader.onload = function(event) {
-                        state.image = new Image();
-                        state.image.onload = function() {
-                            // 计算缩放因子以适应Canvas
-                            const scaleX = canvas.offsetWidth / state.image.width;
-                            const scaleY = canvas.offsetHeight / state.image.height;
-                            state.scaleFactor = Math.min(scaleX, scaleY, 1); // 最大缩放为100%
-                            
-                            initCanvas();
-                            drawCanvas();
-                            
-                            // 重置状态
-                            resetMeasurements();
-                            rulerBtn.disabled = false;
-                            modeIndicator.textContent = "就绪";
-                            statusBar.textContent = `已加载: ${file.name} (${state.image.width}×${state.image.height}像素)`;
+                    if (isTiff) {
+                        // 处理TIFF格式
+                        reader.onload = function(event) {
+                            try {
+                                // 使用tiff.js解析TIFF
+                                const tiffData = new Uint8Array(event.target.result);
+                                const tiff = new Tiff({buffer: tiffData});
+                                
+                                // 将TIFF转换为Canvas
+                                const tiffCanvas = tiff.toCanvas();
+                                
+                                state.image = new Image();
+                                state.image.onload = function() {
+                                    // 计算缩放因子以适应Canvas
+                                    const scaleX = canvas.offsetWidth / state.image.width;
+                                    const scaleY = canvas.offsetHeight / state.image.height;
+                                    state.scaleFactor = Math.min(scaleX, scaleY, 1); // 最大缩放为100%
+                                    
+                                    initCanvas();
+                                    drawCanvas();
+                                    
+                                    // 重置状态
+                                    resetMeasurements();
+                                    rulerBtn.disabled = false;
+                                    modeIndicator.textContent = "就绪";
+                                    statusBar.textContent = `已加载TIFF图像: ${file.name} (${state.image.width}×${state.image.height}像素)`;
+                                };
+                                state.image.src = tiffCanvas.toDataURL('image/png');
+                            } catch (error) {
+                                console.error('TIFF处理错误:', error);
+                                statusBar.textContent = `错误: 无法解析TIFF文件 - ${error.message}`;
+                            }
                         };
-                        state.image.src = event.target.result;
-                    };
+                        reader.readAsArrayBuffer(file);
+                    } else {
+                        // 处理普通图像格式
+                        reader.onload = function(event) {
+                            state.image = new Image();
+                            state.image.onload = function() {
+                                // 计算缩放因子以适应Canvas
+                                const scaleX = canvas.offsetWidth / state.image.width;
+                                const scaleY = canvas.offsetHeight / state.image.height;
+                                state.scaleFactor = Math.min(scaleX, scaleY, 1); // 最大缩放为100%
+                                
+                                initCanvas();
+                                drawCanvas();
+                                
+                                // 重置状态
+                                resetMeasurements();
+                                rulerBtn.disabled = false;
+                                modeIndicator.textContent = "就绪";
+                                statusBar.textContent = `已加载: ${file.name} (${state.image.width}×${state.image.height}像素)`;
+                            };
+                            state.image.src = event.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                    }
                     
                     reader.onerror = function() {
                         statusBar.textContent = "错误: 无法读取图像文件";
                     };
-                    
-                    reader.readAsDataURL(file);
                 }
             });
             
