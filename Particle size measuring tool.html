@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEM图片颗粒尺寸测量工具（支持TIFF）</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #2c3e50, #1a2a6c);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 0;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            background: linear-gradient(to right, #8e2de2, #4a00e0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+            color: #e0e0ff;
+        }
+        
+        .app-container {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .image-section {
+            flex: 1;
+            min-width: 500px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .control-section {
+            width: 320px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+            color: #8e2de2;
+        }
+        
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            background: #111;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        #imageCanvas {
+            cursor: crosshair;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        .instructions {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            border-left: 4px solid #4a00e0;
+        }
+        
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        button {
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(to right, #4a00e0, #8e2de2);
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(to right, #5a1fe4, #9e3df2);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .input-group {
+            margin: 20px 0;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #e0e0ff;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            font-size: 1rem;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #8e2de2;
+            box-shadow: 0 0 0 2px rgba(142, 45, 226, 0.3);
+        }
+        
+        .results {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .result-value {
+            font-weight: 600;
+            color: #8e2de2;
+        }
+        
+        .mode-indicator {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .ruler-mode {
+            background: #ff5722;
+        }
+        
+        .measure-mode {
+            background: #4caf50;
+        }
+        
+        .measurement-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        
+        .measurement-item {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 3px;
+        }
+        
+        .ruler-legend {
+            background: #ff5722;
+        }
+        
+        .measure-legend {
+            background: #4caf50;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            margin-top: 30px;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        
+        .zoom-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .zoom-btn {
+            flex: 1;
+            padding: 10px;
+            font-size: 0.9rem;
+        }
+        
+        .toggle-grid {
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .toggle-grid input {
+            width: 20px;
+            height: 20px;
+        }
+        
+        .stats {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .stat-value {
+            text-align: right;
+            font-weight: 600;
+            color: #8e2de2;
+        }
+        
+        .upload-area {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .file-input-label {
+            display: block;
+            padding: 14px;
+            border-radius: 8px;
+            background: linear-gradient(to right, #4a00e0, #8e2de2);
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .file-input-label:hover {
+            background: linear-gradient(to right, #5a1fe4, #9e3df2);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        @media (max-width: 900px) {
+            .app-container {
+                flex-direction: column;
+            }
+            
+            .image-section, .control-section {
+                min-width: 100%;
+            }
+            
+            .control-section {
+                width: 100%;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+        
+        .status-bar {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            background: rgba(0, 0, 0, 0.3);
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        /* 添加文件类型提示 */
+        .file-type-hint {
+            margin-top: 10px;
+            text-align: center;
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>SEM图片颗粒尺寸测量工具</h1>
+            <p class="subtitle">上传SEM图像，定义标尺比例，然后测量颗粒尺寸。<br>自动计算实际尺寸并显示测量结果，支持多次测量结果统计。</p>
+        </header>
+        
+        <div class="app-container">
+            <section class="image-section">
+                <h2 class="section-title">图像分析 <span class="mode-indicator" id="modeIndicator">就绪</span></h2>
+                
+                <div class="canvas-container">
+                    <canvas id="imageCanvas">您的浏览器不支持Canvas，请升级浏览器</canvas>
+                </div>
+                
+                <div class="instructions">
+                    <p><strong>使用说明：</strong></p>
+                    <ol>
+                        <li>上传SEM图像（支持JPG、PNG、TIFF等格式）</li>
+                        <li>点击"设置标尺"按钮，在图像标尺上绘制一条线</li>
+                        <li>输入标尺的实际长度和单位</li>
+                        <li>点击"开始测量"按钮，在颗粒上绘制测量线</li>
+                        <li>测量结果将自动显示在右侧面板</li>
+                    </ol>
+                </div>
+                
+                <div class="upload-area">
+                    <div class="file-input-wrapper">
+                        <input type="file" id="imageUpload" accept=".jpg,.jpeg,.png,.tif,.tiff,.bmp,.webp">
+                        <label for="imageUpload" class="file-input-label">选择SEM图像文件</label>
+                    </div>
+                    
+                    <div class="file-type-hint">支持格式: JPG, PNG, TIFF</div>
+                    
+                    <div class="status-bar" id="statusBar">
+                        等待上传图像...
+                    </div>
+                </div>
+                
+                <div class="zoom-controls">
+                    <button class="zoom-btn" id="zoomInBtn">放大 +</button>
+                    <button class="zoom-btn" id="zoomOutBtn">缩小 -</button>
+                    <button class="zoom-btn" id="resetZoomBtn">重置缩放</button>
+                </div>
+                
+                <div class="toggle-grid">
+                    <input type="checkbox" id="gridToggle" checked>
+                    <label for="gridToggle">显示测量网格</label>
+                </div>
+            </section>
+            
+            <section class="control-section">
+                <h2 class="section-title">测量控制</h2>
+                
+                <div class="btn-group">
+                    <button id="rulerBtn">📏 设置标尺</button>
+                    <button id="measureBtn" disabled>🔍 开始测量</button>
+                    <button id="resetBtn">🔄 重置所有</button>
+                </div>
+                
+                <div id="rulerSettings" class="input-group">
+                    <label for="rulerLength">标尺实际长度:</label>
+                    <input type="number" id="rulerLength" min="0.01" step="0.01" placeholder="输入标尺长度" disabled>
+                    
+                    <label for="unitSelect">单位:</label>
+                    <select id="unitSelect" disabled>
+                        <option value="nm">纳米 (nm)</option>
+                        <option value="μm" selected>微米 (μm)</option>
+                        <option value="mm">毫米 (mm)</option>
+                    </select>
+                    
+                    <button id="saveRulerBtn" disabled>💾 保存标尺设置</button>
+                </div>
+                
+                <div class="results">
+                    <h3 class="section-title">测量结果</h3>
+                    
+                    <div class="result-item">
+                        <span>当前测量:</span>
+                        <span id="currentMeasurement" class="result-value">未测量</span>
+                    </div>
+                    
+                    <div class="result-item">
+                        <span>像素比例:</span>
+                        <span id="pixelRatio" class="result-value">未设置</span>
+                    </div>
+                    
+                    <div class="measurement-list" id="measurementList">
+                        <p>测量记录将显示在这里...</p>
+                    </div>
+                </div>
+                
+                <div class="stats">
+                    <h4>颗粒尺寸统计</h4>
+                    <div class="stats-grid">
+                        <div>测量次数:</div>
+                        <div id="measureCount" class="stat-value">0</div>
+                        <div>平均尺寸:</div>
+                        <div id="avgSize" class="stat-value">0.00 μm</div>
+                        <div>最小尺寸:</div>
+                        <div id="minSize" class="stat-value">0.00 μm</div>
+                        <div>最大尺寸:</div>
+                        <div id="maxSize" class="stat-value">0.00 μm</div>
+                    </div>
+                </div>
+                
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color ruler-legend"></div>
+                        <span>标尺线</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color measure-legend"></div>
+                        <span>测量线</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+        
+        <footer>
+            <p>SEM图像颗粒尺寸测量工具 | 科学图像分析 | 支持TIFF格式 | 使用Canvas技术实现</p>
+        </footer>
+    </div>
+
+    <!-- 添加TIFF.js库以支持TIFF格式 -->
+    <script src="https://cdn.jsdelivr.net/npm/tiff.js@1.0.0/tiff.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取DOM元素
+            const canvas = document.getElementById('imageCanvas');
+            const ctx = canvas.getContext('2d');
+            const imageUpload = document.getElementById('imageUpload');
+            const rulerBtn = document.getElementById('rulerBtn');
+            const measureBtn = document.getElementById('measureBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const saveRulerBtn = document.getElementById('saveRulerBtn');
+            const rulerLength = document.getElementById('rulerLength');
+            const unitSelect = document.getElementById('unitSelect');
+            const currentMeasurement = document.getElementById('currentMeasurement');
+            const pixelRatio = document.getElementById('pixelRatio');
+            const measurementList = document.getElementById('measurementList');
+            const modeIndicator = document.getElementById('modeIndicator');
+            const zoomInBtn = document.getElementById('zoomInBtn');
+            const zoomOutBtn = document.getElementById('zoomOutBtn');
+            const resetZoomBtn = document.getElementById('resetZoomBtn');
+            const gridToggle = document.getElementById('gridToggle');
+            const measureCount = document.getElementById('measureCount');
+            const avgSize = document.getElementById('avgSize');
+            const minSize = document.getElementById('minSize');
+            const maxSize = document.getElementById('maxSize');
+            const statusBar = document.getElementById('statusBar');
+            
+            // 应用状态
+            const state = {
+                image: null,
+                scaleFactor: 1,
+                imgX: 0,
+                imgY: 0,
+                ruler: {
+                    start: null,
+                    end: null,
+                    length: null,
+                    unit: 'μm',
+                    pixelDistance: 0,
+                    ratio: null // pixels per unit
+                },
+                currentMode: null, // 'ruler', 'measure'
+                measurements: [],
+                tempLine: {
+                    start: null,
+                    end: null
+                },
+                isDrawing: false,
+                showGrid: true
+            };
+            
+            // 初始化Canvas
+            function initCanvas() {
+                canvas.width = canvas.offsetWidth;
+                canvas.height = canvas.offsetHeight;
+                drawCanvas();
+            }
+            
+            // 绘制Canvas内容
+            function drawCanvas() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // 绘制网格
+                if (state.showGrid && gridToggle.checked) {
+                    drawGrid();
+                }
+                
+                // 绘制图像（如果有）
+                if (state.image) {
+                    const imgWidth = state.image.width * state.scaleFactor;
+                    const imgHeight = state.image.height * state.scaleFactor;
+                    state.imgX = (canvas.width - imgWidth) / 2;
+                    state.imgY = (canvas.height - imgHeight) / 2;
+                    
+                    ctx.drawImage(state.image, state.imgX, state.imgY, imgWidth, imgHeight);
+                } else {
+                    // 绘制默认背景和提示
+                    ctx.fillStyle = '#222';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    ctx.fillStyle = '#444';
+                    ctx.font = '20px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('上传SEM图像开始分析', canvas.width / 2, canvas.height / 2);
+                }
+                
+                // 绘制标尺线
+                if (state.ruler.start && state.ruler.end) {
+                    drawLine(state.ruler.start, state.ruler.end, '#ff5722', 3);
+                    
+                    // 绘制标尺标签
+                    if (state.ruler.length) {
+                        const midX = (state.ruler.start.x + state.ruler.end.x) / 2;
+                        const midY = (state.ruler.start.y + state.ruler.end.y) / 2;
+                        
+                        ctx.fillStyle = '#ff5722';
+                        ctx.font = '14px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(`${state.ruler.length}${state.ruler.unit}`, midX, midY - 10);
+                    }
+                }
+                
+                // 绘制测量线
+                state.measurements.forEach(measurement => {
+                    drawLine(measurement.start, measurement.end, '#4caf50', 2);
+                    
+                    // 绘制测量标签
+                    const midX = (measurement.start.x + measurement.end.x) / 2;
+                    const midY = (measurement.start.y + measurement.end.y) / 2;
+                    
+                    ctx.fillStyle = '#4caf50';
+                    ctx.font = '14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(`${measurement.realLength.toFixed(2)}${state.ruler.unit}`, midX, midY - 10);
+                });
+                
+                // 绘制临时线（仅在绘制过程中显示）
+                if (state.tempLine.start && state.tempLine.end) {
+                    drawLine(state.tempLine.start, state.tempLine.end, '#29b6f6', 2);
+                    
+                    // 计算并显示临时线长度
+                    const dist = calculateDistance(state.tempLine.start, state.tempLine.end);
+                    const midX = (state.tempLine.start.x + state.tempLine.end.x) / 2;
+                    const midY = (state.tempLine.start.y + state.tempLine.end.y) / 2;
+                    
+                    ctx.fillStyle = '#29b6f6';
+                    ctx.font = '14px Arial';
+                    ctx.textAlign = 'center';
+                    
+                    if (state.currentMode === 'ruler') {
+                        ctx.fillText(`${dist.toFixed(1)}px`, midX, midY - 10);
+                    } else if (state.currentMode === 'measure' && state.ruler.ratio) {
+                        const realLength = dist / state.ruler.ratio;
+                        ctx.fillText(`${realLength.toFixed(2)}${state.ruler.unit}`, midX, midY - 10);
+                    }
+                }
+            }
+            
+            // 绘制网格
+            function drawGrid() {
+                ctx.strokeStyle = 'rgba(100, 100, 100, 0.2)';
+                ctx.lineWidth = 1;
+                
+                // 水平线
+                for (let y = 0; y <= canvas.height; y += 20) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(canvas.width, y);
+                    ctx.stroke();
+                }
+                
+                // 垂直线
+                for (let x = 0; x <= canvas.width; x += 20) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, canvas.height);
+                    ctx.stroke();
+                }
+            }
+            
+            // 绘制一条线
+            function drawLine(start, end, color, width) {
+                ctx.beginPath();
+                ctx.moveTo(start.x, start.y);
+                ctx.lineTo(end.x, end.y);
+                ctx.strokeStyle = color;
+                ctx.lineWidth = width;
+                ctx.stroke();
+            }
+            
+            // 计算两点之间的距离
+            function calculateDistance(point1, point2) {
+                return Math.sqrt(Math.pow(point2.x - point1.x, 2) + Math.pow(point2.y - point1.y, 2));
+            }
+            
+            // 更新统计信息
+            function updateStatistics() {
+                if (state.measurements.length === 0) {
+                    measureCount.textContent = '0';
+                    avgSize.textContent = '0.00 μm';
+                    minSize.textContent = '0.00 μm';
+                    maxSize.textContent = '0.00 μm';
+                    return;
+                }
+                
+                const sizes = state.measurements.map(m => m.realLength);
+                const sum = sizes.reduce((a, b) => a + b, 0);
+                const avg = sum / sizes.length;
+                const min = Math.min(...sizes);
+                const max = Math.max(...sizes);
+                
+                measureCount.textContent = state.measurements.length;
+                avgSize.textContent = `${avg.toFixed(2)} μm`;
+                minSize.textContent = `${min.toFixed(2)} μm`;
+                maxSize.textContent = `${max.toFixed(2)} μm`;
+            }
+            
+            // 处理图像上传（支持TIFF格式）
+            imageUpload.addEventListener('change', function(e) {
+                if (e.target.files && e.target.files[0]) {
+                    const file = e.target.files[0];
+                    statusBar.textContent = `正在加载: ${file.name}...`;
+                    
+                    const reader = new FileReader();
+                    const isTiff = file.name.toLowerCase().endsWith('.tif') || file.name.toLowerCase().endsWith('.tiff');
+                    
+                    if (isTiff) {
+                        // 处理TIFF格式
+                        reader.onload = function(event) {
+                            try {
+                                // 使用tiff.js解析TIFF
+                                const tiffData = new Uint8Array(event.target.result);
+                                const tiff = new Tiff({buffer: tiffData});
+                                
+                                // 将TIFF转换为Canvas
+                                const tiffCanvas = tiff.toCanvas();
+                                
+                                state.image = new Image();
+                                state.image.onload = function() {
+                                    // 计算缩放因子以适应Canvas
+                                    const scaleX = canvas.offsetWidth / state.image.width;
+                                    const scaleY = canvas.offsetHeight / state.image.height;
+                                    state.scaleFactor = Math.min(scaleX, scaleY, 1); // 最大缩放为100%
+                                    
+                                    initCanvas();
+                                    drawCanvas();
+                                    
+                                    // 重置状态
+                                    resetMeasurements();
+                                    rulerBtn.disabled = false;
+                                    modeIndicator.textContent = "就绪";
+                                    statusBar.textContent = `已加载TIFF图像: ${file.name} (${state.image.width}×${state.image.height}像素)`;
+                                };
+                                state.image.src = tiffCanvas.toDataURL('image/png');
+                            } catch (error) {
+                                console.error('TIFF处理错误:', error);
+                                statusBar.textContent = `错误: 无法解析TIFF文件 - ${error.message}`;
+                            }
+                        };
+                        reader.readAsArrayBuffer(file);
+                    } else {
+                        // 处理普通图像格式
+                        reader.onload = function(event) {
+                            state.image = new Image();
+                            state.image.onload = function() {
+                                // 计算缩放因子以适应Canvas
+                                const scaleX = canvas.offsetWidth / state.image.width;
+                                const scaleY = canvas.offsetHeight / state.image.height;
+                                state.scaleFactor = Math.min(scaleX, scaleY, 1); // 最大缩放为100%
+                                
+                                initCanvas();
+                                drawCanvas();
+                                
+                                // 重置状态
+                                resetMeasurements();
+                                rulerBtn.disabled = false;
+                                modeIndicator.textContent = "就绪";
+                                statusBar.textContent = `已加载: ${file.name} (${state.image.width}×${state.image.height}像素)`;
+                            };
+                            state.image.src = event.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                    
+                    reader.onerror = function() {
+                        statusBar.textContent = "错误: 无法读取图像文件";
+                    };
+                }
+            });
+            
+            // 设置标尺模式
+            rulerBtn.addEventListener('click', function() {
+                if (!state.image) {
+                    statusBar.textContent = "错误: 请先上传图像";
+                    return;
+                }
+                
+                state.currentMode = 'ruler';
+                modeIndicator.textContent = '标尺模式';
+                modeIndicator.className = 'mode-indicator ruler-mode';
+                state.tempLine = { start: null, end: null };
+                state.isDrawing = false;
+                statusBar.textContent = "请在图像标尺上绘制一条线";
+            });
+            
+            // 设置测量模式
+            measureBtn.addEventListener('click', function() {
+                if (!state.ruler.ratio) {
+                    statusBar.textContent = "错误: 请先设置标尺";
+                    return;
+                }
+                
+                state.currentMode = 'measure';
+                modeIndicator.textContent = '测量模式';
+                modeIndicator.className = 'mode-indicator measure-mode';
+                state.tempLine = { start: null, end: null };
+                state.isDrawing = false;
+                statusBar.textContent = "请在颗粒上绘制测量线";
+            });
+            
+            // 保存标尺设置
+            saveRulerBtn.addEventListener('click', function() {
+                const length = parseFloat(rulerLength.value);
+                const unit = unitSelect.value;
+                
+                if (isNaN(length) || length <= 0) {
+                    statusBar.textContent = "错误: 请输入有效的标尺长度";
+                    return;
+                }
+                
+                if (!state.tempLine.start || !state.tempLine.end) {
+                    statusBar.textContent = "错误: 请先在图像上绘制标尺线";
+                    return;
+                }
+                
+                // 计算像素距离
+                const dist = calculateDistance(state.tempLine.start, state.tempLine.end);
+                
+                // 设置标尺
+                state.ruler = {
+                    start: state.tempLine.start,
+                    end: state.tempLine.end,
+                    length: length,
+                    unit: unit,
+                    pixelDistance: dist,
+                    ratio: dist / length // 像素/单位
+                };
+                
+                // 更新显示
+                pixelRatio.textContent = `${state.ruler.ratio.toFixed(2)} 像素/${unit}`;
+                measureBtn.disabled = false;
+                state.tempLine = { start: null, end: null };
+                state.currentMode = null;
+                modeIndicator.textContent = "就绪";
+                modeIndicator.className = 'mode-indicator';
+                drawCanvas();
+                
+                statusBar.textContent = `标尺设置成功! 1${unit} = ${dist.toFixed(1)}像素`;
+            });
+            
+            // 重置所有
+            resetBtn.addEventListener('click', resetMeasurements);
+            
+            function resetMeasurements() {
+                state.ruler = {
+                    start: null,
+                    end: null,
+                    length: null,
+                    unit: 'μm',
+                    pixelDistance: 0,
+                    ratio: null
+                };
+                
+                state.measurements = [];
+                state.tempLine = { start: null, end: null };
+                state.currentMode = null;
+                state.isDrawing = false;
+                state.scaleFactor = 1;
+                
+                // 重置UI
+                rulerLength.value = '';
+                currentMeasurement.textContent = '未测量';
+                pixelRatio.textContent = '未设置';
+                measurementList.innerHTML = '<p>测量记录将显示在这里...</p>';
+                modeIndicator.textContent = '就绪';
+                modeIndicator.className = 'mode-indicator';
+                rulerBtn.disabled = !state.image;
+                measureBtn.disabled = true;
+                saveRulerBtn.disabled = true;
+                rulerLength.disabled = true;
+                unitSelect.disabled = true;
+                
+                updateStatistics();
+                drawCanvas();
+                statusBar.textContent = "已重置所有测量数据";
+            }
+            
+            // 缩放控制
+            zoomInBtn.addEventListener('click', function() {
+                if (!state.image) {
+                    statusBar.textContent = "错误: 请先上传图像";
+                    return;
+                }
+                state.scaleFactor = Math.min(state.scaleFactor * 1.2, 3);
+                drawCanvas();
+                statusBar.textContent = `缩放: ${(state.scaleFactor * 100).toFixed(0)}%`;
+            });
+            
+            zoomOutBtn.addEventListener('click', function() {
+                if (!state.image) {
+                    statusBar.textContent = "错误: 请先上传图像";
+                    return;
+                }
+                state.scaleFactor = Math.max(state.scaleFactor * 0.8, 0.5);
+                drawCanvas();
+                statusBar.textContent = `缩放: ${(state.scaleFactor * 100).toFixed(0)}%`;
+            });
+            
+            resetZoomBtn.addEventListener('click', function() {
+                if (!state.image) {
+                    statusBar.textContent = "错误: 请先上传图像";
+                    return;
+                }
+                const scaleX = canvas.offsetWidth / state.image.width;
+                const scaleY = canvas.offsetHeight / state.image.height;
+                state.scaleFactor = Math.min(scaleX, scaleY, 1);
+                drawCanvas();
+                statusBar.textContent = "已重置缩放";
+            });
+            
+            // 网格切换
+            gridToggle.addEventListener('change', function() {
+                state.showGrid = this.checked;
+                drawCanvas();
+            });
+            
+            // 处理Canvas鼠标事件
+            canvas.addEventListener('mousedown', handleMouseDown);
+            canvas.addEventListener('mousemove', handleMouseMove);
+            canvas.addEventListener('mouseup', handleMouseUp);
+            
+            function handleMouseDown(e) {
+                if (!state.image || !state.currentMode) return;
+                
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                // 检查点击位置是否在图像内
+                const imgWidth = state.image.width * state.scaleFactor;
+                const imgHeight = state.image.height * state.scaleFactor;
+                
+                if (x < state.imgX || x > state.imgX + imgWidth || 
+                    y < state.imgY || y > state.imgY + imgHeight) {
+                    return;
+                }
+                
+                state.isDrawing = true;
+                
+                if (!state.tempLine.start) {
+                    state.tempLine.start = { x, y };
+                    state.tempLine.end = { x, y }; // 初始化终点位置
+                }
+                
+                drawCanvas();
+            }
+            
+            function handleMouseMove(e) {
+                if (!state.image || !state.currentMode || !state.isDrawing || !state.tempLine.start) return;
+                
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                state.tempLine.end = { x, y };
+                drawCanvas();
+                
+                // 在标尺模式下启用标尺设置
+                if (state.currentMode === 'ruler' && state.tempLine.start && state.tempLine.end) {
+                    rulerLength.disabled = false;
+                    unitSelect.disabled = false;
+                    saveRulerBtn.disabled = false;
+                }
+            }
+            
+            function handleMouseUp(e) {
+                if (!state.image || !state.currentMode || !state.isDrawing) return;
+                
+                state.isDrawing = false;
+                
+                if (state.tempLine.start && state.tempLine.end) {
+                    if (state.currentMode === 'measure') {
+                        // 完成测量
+                        const dist = calculateDistance(state.tempLine.start, state.tempLine.end);
+                        const realLength = dist / state.ruler.ratio;
+                        
+                        // 保存测量结果
+                        state.measurements.push({
+                            start: {...state.tempLine.start},
+                            end: {...state.tempLine.end},
+                            pixelDistance: dist,
+                            realLength: realLength
+                        });
+                        
+                        // 更新UI
+                        currentMeasurement.textContent = `${realLength.toFixed(2)}${state.ruler.unit}`;
+                        
+                        // 添加到测量列表
+                        const measurementItem = document.createElement('div');
+                        measurementItem.className = 'measurement-item';
+                        measurementItem.innerHTML = `
+                            <span>测量 ${state.measurements.length}:</span>
+                            <span>${realLength.toFixed(2)}${state.ruler.unit}</span>
+                        `;
+                        
+                        if (measurementList.firstChild && measurementList.firstChild.nodeName === 'P') {
+                            measurementList.removeChild(measurementList.firstChild);
+                        }
+                        measurementList.appendChild(measurementItem);
+                        
+                        // 滚动到底部
+                        measurementList.scrollTop = measurementList.scrollHeight;
+                        
+                        // 更新统计
+                        updateStatistics();
+                        
+                        statusBar.textContent = `测量完成: ${realLength.toFixed(2)}${state.ruler.unit}`;
+                        
+                        // 重置临时线
+                        state.tempLine = { start: null, end: null };
+                    } else if (state.currentMode === 'ruler') {
+                        // 标尺模式下保留临时线直到保存
+                        statusBar.textContent = "标尺线已绘制，请保存设置";
+                    }
+                }
+                
+                drawCanvas();
+            }
+            
+            // 初始化
+            initCanvas();
+            window.addEventListener('resize', initCanvas);
+        });
+    </script>
+</body>
+</html>
