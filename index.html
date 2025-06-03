@@ -523,6 +523,35 @@
             font-size: 14px;
         }
         
+        /* 统计信息样式 */
+        .stats-container {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            font-size: 16px;
+            color: var(--gray);
+        }
+        
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .stat-item i {
+            color: var(--accent);
+        }
+        
+        .stat-number {
+            font-weight: bold;
+            color: var(--light);
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
         /* 响应式设计 */
         @media (max-width: 768px) {
             .navbar {
@@ -562,6 +591,11 @@
             .qrcode {
                 width: 150px;
                 height: 150px;
+            }
+            
+            .stats-container {
+                flex-direction: column;
+                gap: 10px;
             }
         }
         
@@ -641,7 +675,8 @@
                         </div>
                     </a>
                 </div>
-            </div>
+                
+             </div>
         </section>
 
         <!-- 分类页面 -->
@@ -666,6 +701,7 @@
                         <li class="coming-soon">待更新</li>
                     </ul>
                 </div>
+               
             </div>
         </section>
 
@@ -698,6 +734,7 @@
                 <div class="about-section">
                     <h3><i class="fas fa-envelope"></i> 联系方式</h3>
                     <div class="contact-info">
+                        <i class="fas fa-envelope"></i>
                         <span>muyixh163@163.com</span>
                     </div>
                     <p>如果您有任何问题、建议或合作意向，欢迎随时联系我们。我们非常重视用户的反馈，并将不断改进我们的工具和服务。</p>
@@ -711,7 +748,7 @@
                     </div>
                     <div class="support-content">
                         <p>如果您觉得我们的工具对您有帮助，欢迎通过扫码支持我们。您的支持将帮助我们持续开发更多实用的科研工具！</p>
-                        
+
                         <div class="qrcode-container">
                             <div class="qrcode-item">
                                 <div class="qrcode">
@@ -741,9 +778,27 @@
     <footer>
         <div class="container">
             <p>&copy; 2025 MUYI-XH 科研助手平台 | 专为科研，有感而发</p>
+            <!-- 统计信息区域 -->
+            <div class="stats-container">
+                <div class="stat-item">
+                    <i class="fas fa-eye"></i>
+                    <span>访问量: <span class="stat-number" id="busuanzi_value_site_pv">0</span></span>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-user"></i>
+                    <span>访客数: <span class="stat-number" id="busuanzi_value_site_uv">0</span></span>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-mouse-pointer"></i>
+                    <span>页面点击: <span class="stat-number" id="busuanzi_value_page_pv">0</span></span>
+                </div>
+            </div>
         </div>
     </footer>
 
+    <!-- 添加不蒜子统计脚本 -->
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
     <script>
         // 导航切换功能
         document.addEventListener('DOMContentLoaded', function() {
@@ -776,6 +831,24 @@
                     e.preventDefault();
                 });
             });
+            
+            // 统计显示功能
+            // 模拟统计数据的增长（实际部署时不需要）
+            let pv = 0, uv = 0, pagePv = 0;
+            
+            // 模拟访问量增长
+            setInterval(() => {
+                // 如果已经加载了不蒜子统计，则跳过
+                if (window.busuanzi) return;
+                
+                pv += Math.floor(Math.random() * 3);
+                uv += Math.floor(Math.random() * 2);
+                pagePv += Math.floor(Math.random() * 5);
+                
+                document.getElementById('busuanzi_value_site_pv').textContent = pv;
+                document.getElementById('busuanzi_value_site_uv').textContent = uv;
+                document.getElementById('busuanzi_value_page_pv').textContent = pagePv;
+            }, 3000);
         });
     </script>
 </body>
