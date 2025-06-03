@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MUYI-XH | SEM图片颗粒尺寸测量工具</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -18,6 +19,7 @@
             min-height: 100vh;
             padding: 20px;
             overflow-x: hidden;
+            padding-top: 80px; /* 为导航栏留出空间 */
         }
         
         .container {
@@ -26,6 +28,13 @@
         }
         
         header {
+            text-align: center;
+            padding: 30px 0;
+            margin-bottom: 30px;
+        }
+	
+/* 新增*/
+        header.tool-header {
             text-align: center;
             padding: 30px 0;
             margin-bottom: 30px;
@@ -391,9 +400,154 @@
             font-size: 0.85rem;
             opacity: 0.8;
         }
+
+        /* 导航栏样式 */
+        header.nav-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(10, 21, 38, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            padding: 15px 0;
+        }
+        
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .logo-section {
+            display: flex;
+            align-items: center;
+        }
+        
+        .avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1a73e8, #00bcd4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+            margin-right: 15px;
+            border: 2px solid #00bcd4;
+        }
+        
+        .logo-text {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .logo-text h1 {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            background: linear-gradient(to right, #1a73e8, #00bcd4);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+	    text-align: left;
+            margin-bottom: 5px; /* 减少下方间距 */
+        }
+        
+        .logo-text p {
+            font-size: 12px;
+            color: #8c9db5;
+            /* margin-top: 3px;*/
+            margin-top: 0; /* 移除上方间距 */
+        }
+        
+        nav ul {
+            display: flex;
+            list-style: none;
+        }
+        
+        nav ul li {
+            margin-left: 30px;
+        }
+        
+        nav ul li a {
+            color: #f5f9ff;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 16px;
+            padding: 8px 15px;
+            border-radius: 30px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        nav ul li a:hover {
+            color: #00bcd4;
+        }
+        
+        nav ul li a.active {
+            background: rgba(26, 115, 232, 0.2);
+            color: #1a73e8;
+        }
+        
+        nav ul li a.active::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 5px;
+            height: 5px;
+            background: #1a73e8;
+            border-radius: 50%;
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            nav {
+                width: 100%;
+                margin-top: 15px;
+            }
+            
+            nav ul {
+                justify-content: space-between;
+            }
+            
+            nav ul li {
+                margin-left: 0;
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- 添加导航栏 -->
+    <header class="nav-header">
+        <div class="navbar">
+            <div class="logo-section">
+                <div class="avatar">MX</div>
+                <div class="logo-text">
+                    <h1>MUYI-XH</h1>
+                    <p>专为科研，有感而发。多多提问，多多包涵。</p>
+                </div>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="https://muyi-xh.github.io/muyi_page_net/" class="nav-link active">首页</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
     <div class="container">
         <header>
             <h1>SEM图片颗粒尺寸测量工具</h1>
@@ -513,7 +667,7 @@
         </div>
         
         <footer>
-            <p>SEM图像颗粒尺寸测量工具 | 科学图像分析 | 支持TIFF格式 | 使用Canvas技术实现</p>
+            <p>MUYI-XH | SEM图像颗粒尺寸测量工具 | 科学图像分析 | 支持TIFF格式 | 使用Canvas技术实现</p>
         </footer>
     </div>
 
